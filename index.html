@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SO₂ Calculator Pro</title>
+
+<style>
+body {
+    font-family: Arial;
+    background: #f4f4f4;
+    text-align: center;
+    padding: 20px;
+}
+.container {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    max-width: 420px;
+    margin: auto;
+}
+input, select {
+    width: 90%;
+    padding: 10px;
+    margin: 8px 0;
+}
+button {
+    width: 95%;
+    padding: 12px;
+    background: #007aff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+}
+.result {
+    margin-top: 20px;
+    font-weight: bold;
+}
+.hidden { display:none; }
+.section {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #ddd;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h2>SO₂ Calculator Pro</h2>
+
+    <input type="number" id="gallons" placeholder="Gallons">
+
+    <!-- Molecular Section -->
+    <div class="section">
+        <h4>Molecular SO₂ Mode</h4>
+
+        <input type="number" step="0.01" id="ph" placeholder="pH">
+
+        <select id="molecularTarget">
+            <option value="0.5">0.5 (Red)</option>
+            <option value="0.8">0.8 (White)</option>
+            <option value="1.0">1.0 (Sweet/High Protection)</option>
+        </select>
+
+        <button onclick="calculateFromPH()">Auto Calculate PPM from pH</button>
+    </div>
+
+    <!-- Manual override -->
+    <input type="number" id="ppm" placeholder="Target ppm">
+
+    <!-- SO2 source -->
+    <input type="number" id="so2Percent" placeholder="SO₂ % (6 or 10)">
+
+    <label>
+        <input type="checkbox" id="kmbsOption"> Use KMBS (57%)
+    </label>
+
+    <button onclick="calculate()">Calculate Add</button>
+
+    <div id="result" class="result hidden">
+        <h3><span id="so2Amount"></span></h3>
+        <div id="details"></div>
+    </div>
+</div>
+
+<script>
+
+// 🔬 Calculate ppm from pH + molecular
+function calculateFromPH() {
+    const ph = parseFloat(document.getElementById("ph").value);
+    const molecular = parseFloat(document.getElementById("molecularTarget").value);
+
+    if (!ph || !molecular) {
+        alert("Enter pH and select molecular target");
+        return;
+    }
+
+    const freeSO2 = molecular / Math.pow(10, (ph - 1.81));
+
+    const ppm = Math.round(freeSO2);
+
+    document.getElementById("ppm").value = ppm;
+
+    alert(`Target Free SO₂ ≈ ${ppm} ppm`);
+}
+
+
+// 🧮 Main calculation
+function calculate() {
+    const gallons = parseFloat(document.getElementById("gallons").value);
+    const ppm = parseFloat(document.getElementById("ppm").value);
+    let so2Percent = parseFloat(document.getElementById("so2Percent").value);
+    const useKMBS = document.getElementById("kmbsOption").checked;
+
+    if (!gallons || !ppm || (!useKMBS && !so2Percent)) {
+        alert("Fill all fields");
+        return;
+    }
+
+    const liters = gallons * 3.785;
+    const mgSO2 = liters * ppm;
+
+    let resultText = "";
+    let details = "";
+
+    if (useKMBS) {
+        so2Percent = 57;
+
+        const grams = mgSO2 / (so2Percent / 100) / 1000;
+
+        resultText = grams.toFixed(1) + " g KMBS";
+
+        details = `
+        ${gallons} gal → ${liters.toFixed(1)} L<br>
+        × ${ppm} ppm = ${mgSO2.toFixed(0)} mg SO₂<br>
+        ÷ 57% = ${grams.toFixed(1)} g KMBS
+        `;
+    } else {
+        const ml = mgSO2 / (so2Percent * 10);
+
+        resultText = Math.round(ml) + " mL";
+
+        details = `
+        ${gallons} gal → ${liters.toFixed(1)} L<br>
+        × ${ppm} ppm = ${mgSO2.toFixed(0)} mg SO₂<br>
+        ÷ (${so2Percent}% × 10) = ${Math.round(ml)} mL
+        `;
+    }
+
+    document.getElementById("so2Amount").textContent = resultText;
+    document.getElementById("details").innerHTML = details;
+    document.getElementById("result").classList.remove("hidden");
+}
+
+</script>
+
+</body>
+</html>
