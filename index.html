@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SO2 Calculator</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    font-family: "Segoe UI", Tahoma, sans-serif;
+}
+
+body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #dbeafe, #f0f9ff);
+}
+
+.container {
+    width: 400px;
+    padding: 25px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(15px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+label {
+    font-size: 13px;
+    color: #444;
+}
+
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    margin-bottom: 12px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    background: #0078d4;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.result {
+    margin-top: 20px;
+    font-size: 20px;
+    text-align: center;
+    font-weight: bold;
+    line-height: 1.6;
+}
+
+.small {
+    text-align: center;
+    font-size: 12px;
+    color: #666;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>SO₂ Calculator</h2>
+
+<label>Gallons</label>
+<input type="number" id="gallons">
+
+<label>Target ppm</label>
+<input type="number" id="ppm">
+
+<label>SO₂ %</label>
+<input type="number" id="percent" value="6">
+
+<label>Mode</label>
+<select id="mode">
+    <option value="liquid">Liquid SO₂</option>
+    <option value="kmbs">KMBS</option>
+</select>
+
+<label>Distribution</label>
+<select id="distribution">
+    <option value="total">Total Only</option>
+    <option value="59">59 gal barrels</option>
+    <option value="132">132 gal barrels</option>
+</select>
+
+<hr>
+
+<h3 style="margin-top:10px;">Molecular (optional)</h3>
+
+<label>pH</label>
+<input type="number" step="0.01" id="ph">
+
+<label>Target Molecular</label>
+<input type="number" step="0.01" id="molecular" value="0.5">
+
+<button onclick="calculate()">Calculate</button>
+
+<div class="result" id="result"></div>
+<div class="small" id="details"></div>
+
+</div>
+
+<script>
+function calculate() {
+    const gallons = parseFloat(document.getElementById('gallons').value);
+    let ppm = parseFloat(document.getElementById('ppm').value);
+    const percent = parseFloat(document.getElementById('percent').value);
+    const mode = document.getElementById('mode').value;
+    const distribution = document.getElementById('distribution').value;
+
+    const ph = parseFloat(document.getElementById('ph').value);
+    const molecular = parseFloat(document.getElementById('molecular').value);
+
+    let usedMolecular = false;
+
+    // Molecular → ppm
+    if (!isNaN(ph) && !isNaN(molecular)) {
+        ppm = molecular * (1 + Math.pow(10, (ph - 1.81)));
+        usedMolecular = true;
+    }
+
+    let total = 0;
+    let unit = "";
+
+    // YOUR formula
+    if (mode === "liquid") {
+        total = (gallons * ppm * 0.3785) / percent;
+        unit = "mL SO₂";
+    } else {
+        total = (gallons * ppm * 3.785) / 570;
+        unit = "g KMBS";
+    }
+
+    let output = `Total: ${total.toFixed(1)} ${unit}`;
+
+    // Optional barrel breakdown
+    if (distribution === "59") {
+        const barrels = gallons / 59;
+        const perBarrel = total / barrels;
+
+        output += `<br><br>→ ${perBarrel.toFixed(1)} per 59 gal barrel<br>(≈ ${barrels.toFixed(2)} barrels)`;
+    }
+
+    if (distribution === "132") {
+        const barrels = gallons / 132;
+        const perBarrel = total / barrels;
+
+        output += `<br><br>→ ${perBarrel.toFixed(1)} per 132 gal barrel<br>(≈ ${barrels.toFixed(2)} barrels)`;
+    }
+
+    document.getElementById('result').innerHTML = output;
+
+    let detailText = `Using ${ppm.toFixed(1)} ppm`;
+    if (usedMolecular) {
+        detailText += ` (from pH ${ph})`;
+    }
+
+    document.getElementById('details').innerText = detailText;
+}
+</script>
+
+</body>
+</html>
